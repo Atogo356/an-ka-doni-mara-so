@@ -49,12 +49,15 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// SAVE
+// SAUVEGARDE
 function saveNote() {
   const title = document.getElementById("title").value;
   const content = document.getElementById("content").value;
 
-  alert("Bouton OK");
+  if (!title || !content) {
+    alert("Remplis les champs !");
+    return;
+  }
 
   db.collection("notes").add({
     title: title,
@@ -63,17 +66,16 @@ function saveNote() {
   })
   .then(() => {
     alert("✅ Sauvegardé !");
+    document.getElementById("title").value = "";
+    document.getElementById("content").value = "";
   })
   .catch((error) => {
     alert("❌ Erreur: " + error.message);
-    console.log(error);
   });
 }
 
-// LOAD
-db.collection("notes")
-.orderBy("createdAt", "desc")
-.onSnapshot((snapshot) => {
+// CHARGEMENT (SANS orderBy → corrige ton problème)
+db.collection("notes").onSnapshot((snapshot) => {
 
   const notesDiv = document.getElementById("notes");
   notesDiv.innerHTML = "";
