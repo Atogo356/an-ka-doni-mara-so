@@ -1,55 +1,381 @@
-<!-- PWA Basic -->
-<meta name="theme-color" content="#020617" />
-<meta name="apple-mobile-web-app-capable" content="yes">
-
-<!-- Scripts: Tailwind, Lucide, Firebase, Supabase -->
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>An ka Doni Mara So - ARCHIVE RÉELLE</title>
     
-    body { 
-        background-color: #020617; 
-        color: #f8fafc; 
-        font-family: 'Inter', sans-serif;
-        -webkit-font-smoothing: antialias;
-        overflow-x: hidden;
-    }
+    <!-- Scripts avec fallbacks -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        
+        body { 
+            background-color: #020617; 
+            color: #f8fafc; 
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialias;
+            overflow-x: hidden;
+        }
 
-    .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); }
-    .glass-card { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
-    
-    .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-    
-    .fab {
-        width: 72px; height: 72px; border-radius: 50%;
-        background: #2563eb; display: flex; align-items: center; justify-content: center;
-        box-shadow: 0 15px 35px -5px rgba(37, 99, 235, 0.6);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 5px solid #020617;
-    }
-    .fab:active { transform: scale(0.9) translateY(4px); }
+        .glass { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(24px); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass-card { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        
+        .safe-top { padding-top: env(safe-area-inset-top); }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        
+        .fab {
+            width: 72px; height: 72px; border-radius: 50%;
+            background: #2563eb; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 10px 30px -5px rgba(37, 99, 235, 0.5);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 4px solid #020617;
+            color: white;
+            cursor: pointer;
+            z-index: 60;
+        }
+        .fab:active { transform: scale(0.9) translateY(4px); }
 
-    @keyframes pulse-red {
-        0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
-        70% { box-shadow: 0 0 0 20px rgba(220, 38, 38, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
-    }
-    .recording-active { animation: pulse-red 1.5s infinite; border-color: #dc2626 !important; }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5); }
+            70% { box-shadow: 0 0 0 20px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+        .recording-active { animation: pulse-red 1.5s infinite; border-color: #dc2626 !important; }
 
-    .media-container video, .media-container img {
-        width: 100%; border-radius: 2rem;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: #000;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    }
-    
-    audio { width: 100%; height: 40px; border-radius: 10px; }
-    
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-</style>
+        .progress-bar-fill {
+            height: 100%;
+            background: #2563eb;
+            width: 0%;
+            transition: width 0.3s ease-out;
+            border-radius: 999px;
+        }
+
+        .media-container img, .media-container video {
+            width: 100%; border-radius: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #000;
+        }
+        audio { width: 100%; border-radius: 1rem; margin-top: 0.5rem; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header avec Statut -->
+    <header class="sticky top-0 z-50 glass p-5 safe-top">
+        <div class="max-w-xl mx-auto flex flex-col items-center">
+            <div class="flex items-center gap-2">
+                <div id="conn-led" class="w-2.5 h-2.5 rounded-full bg-slate-700"></div>
+                <h1 class="text-xl font-black tracking-tighter italic text-white uppercase">An ka Doni Mara So</h1>
+            </div>
+            <p id="sys-status" class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 mt-1">Connexion en cours...</p>
+        </div>
+    </header>
+
+    <main class="max-w-xl mx-auto p-5 pb-44 space-y-8">
+        <!-- Formulaire Texte -->
+        <section class="glass-card rounded-[2.5rem] p-6 shadow-2xl border border-white/10">
+            <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
+                <i data-lucide="edit-3" size="14"></i> Nouvelle Note Mara
+            </h3>
+            <div class="space-y-4">
+                <input type="text" id="note-title" placeholder="Titre de l'archive..." class="w-full bg-slate-900/50 border border-white/10 rounded-2xl p-4 text-white focus:ring-2 focus:ring-blue-600 outline-none font-bold placeholder:text-slate-700">
+                <textarea id="note-content" placeholder="Contenu (optionnel)..." rows="3" class="w-full bg-slate-900/50 border border-white/10 rounded-2xl p-4 text-white focus:ring-2 focus:ring-blue-600 outline-none resize-none text-sm placeholder:text-slate-700"></textarea>
+                <button onclick="saveTextArchive()" id="save-btn" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl active:scale-95 text-white">Archiver Texte</button>
+            </div>
+        </section>
+
+        <!-- Barre de Progression Upload -->
+        <div id="upload-panel" class="hidden glass-card p-5 rounded-2xl border-blue-500/30 space-y-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="upload-cloud" class="text-blue-500 animate-bounce" size="20"></i>
+                    <span id="upload-label" class="text-[10px] font-black uppercase text-blue-400">Transfert...</span>
+                </div>
+                <span id="upload-percentage" class="text-[10px] font-black text-blue-400">0%</span>
+            </div>
+            <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                <div id="upload-bar" class="progress-bar-fill"></div>
+            </div>
+            <p id="upload-error" class="hidden text-[10px] text-red-500 font-bold uppercase"></p>
+        </div>
+
+        <!-- Liste des Archives -->
+        <section class="space-y-6">
+            <div class="flex items-center justify-between px-2">
+                <h2 class="text-xs font-black uppercase tracking-[0.2em] text-blue-500">Flux des Archives</h2>
+                <span id="archive-count" class="text-[10px] bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full font-black border border-blue-500/10">0</span>
+            </div>
+            <div id="archives-list" class="space-y-6">
+                <!-- Loading -->
+                <div class="flex flex-col items-center py-20 text-slate-700">
+                    <i data-lucide="loader" class="animate-spin mb-4" size="32"></i>
+                    <p class="text-[10px] font-black uppercase tracking-widest">Récupération des données...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Navigation -->
+    <nav class="fixed bottom-0 inset-x-0 p-8 z-[60] bg-gradient-to-t from-black via-black/90 to-transparent safe-bottom">
+        <div class="max-w-xl mx-auto flex items-center justify-between glass p-4 px-8 rounded-[3.5rem] shadow-2xl relative border-white/10">
+            <button onclick="initCapture('audio')" class="w-12 h-12 glass text-slate-400 hover:text-blue-500 rounded-full flex items-center justify-center transition-all active:scale-90"><i data-lucide="mic"></i></button>
+            <button onclick="initCapture('video')" class="w-12 h-12 glass text-slate-400 hover:text-purple-500 rounded-full flex items-center justify-center transition-all active:scale-90"><i data-lucide="video"></i></button>
+            
+            <div class="absolute left-1/2 -top-10 -translate-x-1/2">
+                <label for="file-picker" class="fab">
+                    <i data-lucide="plus" size="36"></i>
+                </label>
+                <input type="file" id="file-picker" class="hidden" onchange="processFile(event)" accept="image/*,audio/*,video/*">
+            </div>
+            
+            <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="w-12 h-12 glass text-slate-400 hover:text-green-500 rounded-full flex items-center justify-center transition-all active:scale-90"><i data-lucide="chevron-up"></i></button>
+            <button onclick="location.reload()" class="w-12 h-12 glass text-slate-400 hover:text-orange-500 rounded-full flex items-center justify-center transition-all active:scale-90"><i data-lucide="refresh-cw"></i></button>
+        </div>
+    </nav>
+
+    <!-- Overlay Capture -->
+    <div id="capture-ui" class="hidden fixed inset-0 z-[100] bg-slate-950/98 backdrop-blur-3xl flex flex-col items-center justify-center p-10 text-center">
+        <div class="w-24 h-24 rounded-full border-4 border-red-600/30 flex items-center justify-center mb-8 recording-active">
+            <i id="capture-icon" data-lucide="mic" size="48" class="text-red-600"></i>
+        </div>
+        <h2 id="capture-title" class="text-2xl font-black italic uppercase text-white mb-2">Capture en cours</h2>
+        <div id="capture-timer" class="text-red-600 font-mono text-3xl mb-12 font-black">00:00</div>
+        
+        <div id="video-preview-wrap" class="hidden w-full max-w-sm aspect-video rounded-[2.5rem] overflow-hidden mb-12 border border-white/10 bg-black shadow-2xl">
+            <video id="video-preview" autoplay muted playsinline class="w-full h-full object-cover"></video>
+        </div>
+        
+        <button onclick="stopCapture()" class="w-full max-w-sm py-6 bg-red-600 text-white rounded-3xl font-black uppercase tracking-widest shadow-2xl active:scale-95 transition-all">STOP & ARCHIVER</button>
+    </div>
+
+    <script>
+        // CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyDgXiAiZXQ9oVDhsXrxgB7mDXVA8yTpYJ4",
+            authDomain: "iron-be1a0.firebaseapp.com",
+            projectId: "iron-be1a0",
+            storageBucket: "iron-be1a0.appspot.com",
+            messagingSenderId: "470790299848",
+            appId: "1:470790299848:web:25f13d00162ef126f085fd"
+        };
+        const SUPABASE_URL = "https://flohxhphoqrlhpycpeqj.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_zeA4gufobrmCcvINUDYeXA_47ntogmH";
+        const BUCKET = "mara-so";
+
+        let db, sb;
+
+        // DÉMARRAGE ET TESTS
+        window.addEventListener('DOMContentLoaded', async () => {
+            console.log("⚙️ Initialisation du kernel...");
+            try {
+                // 1. Firebase
+                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                
+                // 2. Supabase
+                if (typeof window.supabase === 'undefined') throw new Error("SDK Supabase non chargé !");
+                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                
+                // 3. Test de Bucket
+                await testSupabase();
+                
+                lucide.createIcons();
+                startLiveSync();
+            } catch (err) {
+                console.error("⛔ CRASH SYSTEM:", err);
+                setStatus(`ERREUR CRITIQUE: ${err.message}`, "bg-red-600", "text-red-500");
+                alert("Impossible de démarrer l'application : " + err.message);
+            }
+        });
+
+        async function testSupabase() {
+            try {
+                // On essaye de récupérer les métadonnées du bucket pour vérifier s'il existe et si CORS/RLS est OK
+                const { data, error } = await sb.storage.getBucket(BUCKET);
+                
+                if (error) {
+                    // Si on a un 403, c'est que le bucket est privé (mais il existe peut-être)
+                    // Si on a un 404, il n'existe pas
+                    if (error.status === 404) throw new Error(`Le bucket '${BUCKET}' n'existe pas.`);
+                    console.warn("Bucket restreint ou erreur 403 : On tente l'upload quand même.");
+                    setStatus("SUPABASE: CONNECTÉ (BUCKET RESTREINT)", "bg-orange-500", "text-orange-500");
+                } else {
+                    console.log("✅ Bucket Supabase validé:", data);
+                    setStatus("SUPABASE: BUCKET 'MARA-SO' CONNECTÉ", "bg-green-600", "text-green-500");
+                }
+            } catch (err) {
+                console.error("Test Connectivity failed:", err);
+                setStatus(`ECHEC SUPABASE: ${err.message.toUpperCase()}`, "bg-red-600", "text-red-500");
+            }
+        }
+
+        function setStatus(txt, led, label) {
+            document.getElementById('sys-status').innerText = txt;
+            document.getElementById('sys-status').className = `text-[9px] font-black uppercase tracking-[0.3em] mt-1 ${label}`;
+            document.getElementById('conn-led').className = `w-2.5 h-2.5 rounded-full ${led}`;
+        }
+
+        // LOGIQUE D'UPLOAD UNIFIÉE
+        async function processFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const type = file.type.split('/')[0];
+            const finalType = ['image', 'audio', 'video'].includes(type) ? type : 'file';
+            await performMasterUpload(file, finalType);
+            event.target.value = '';
+        }
+
+        async function performMasterUpload(file, type) {
+            console.log(`🚀 Début upload: ${file.name} (${type})`);
+            const ui = document.getElementById('upload-panel');
+            const bar = document.getElementById('upload-bar');
+            const lbl = document.getElementById('upload-label');
+            const pct = document.getElementById('upload-percentage');
+            const errBox = document.getElementById('upload-error');
+
+            ui.classList.remove('hidden');
+            errBox.classList.add('hidden');
+            bar.style.width = '0%';
+            bar.style.backgroundColor = '#2563eb';
+            pct.innerText = '0%';
+            lbl.innerText = `ARCHIVAGE ${type.toUpperCase()}...`;
+
+            // Nom de fichier unique pour éviter les conflits et écrasements
+            const ext = file.name.split('.').pop();
+            const filePath = `${type}s/${Date.now()}-${Math.floor(Math.random()*1000)}.${ext || 'bin'}`;
+
+            try {
+                // Tentative d'upload réelle
+                const { data, error } = await sb.storage.from(BUCKET).upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false,
+                    contentType: file.type || 'application/octet-stream',
+                    onUploadProgress: (p) => {
+                        const prog = Math.round((p.loaded / p.total) * 100);
+                        console.log(`📊 Upload progress: ${prog}%`);
+                        bar.style.width = `${prog}%`;
+                        pct.innerText = `${prog}%`;
+                    }
+                });
+
+                if (error) {
+                    console.error("❌ SUPABASE UPLOAD ERROR:", error);
+                    // Identification précise du problème
+                    if (error.statusCode === "403" || error.message.includes("Policy")) {
+                        throw new Error("RLS DENIED: Vous devez activer 'Allow anonymous uploads' sur le bucket 'mara-so' dans Supabase.");
+                    }
+                    if (error.message.includes("Failed to fetch")) {
+                        throw new Error("CORS ERROR: Vous devez ajouter votre domaine dans Settings > API > CORS dans Supabase.");
+                    }
+                    throw error;
+                }
+
+                console.log("✅ Fichier uploadé avec succès:", data);
+
+                // Récupération du lien public
+                const { data: { publicUrl } } = sb.storage.from(BUCKET).getPublicUrl(filePath);
+                
+                // Archivage dans Firestore
+                await db.collection('notes').add({
+                    title: `Archive ${type.toUpperCase()} - ${new Date().toLocaleTimeString()}`,
+                    content: `Nom: ${file.name}`,
+                    fileUrl: publicUrl,
+                    fileType: type,
+                    storagePath: filePath,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                lbl.innerText = "ARCHIVAGE TERMINE !";
+                bar.style.backgroundColor = "#22c55e";
+                setTimeout(() => ui.classList.add('hidden'), 2000);
+
+            } catch (err) {
+                console.error("💀 FATAL UPLOAD FAILURE:", err);
+                lbl.innerText = "ÉCHEC DE L'UPLOAD";
+                pct.innerText = "ERR";
+                bar.style.backgroundColor = "#ef4444";
+                bar.style.width = "100%";
+                errBox.innerText = err.message;
+                errBox.classList.remove('hidden');
+                alert("ERREUR SUPABASE: " + err.message);
+            }
+        }
+
+        // CAPTURE MEDIA
+        let recorder = null, chunks = [], recInt = null;
+        async function initCapture(type) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
+                
+                if (type === 'video') {
+                    document.getElementById('video-preview-wrap').classList.remove('hidden');
+                    document.getElementById('video-preview').srcObject = stream;
+                } else {
+                    document.getElementById('video-preview-wrap').classList.add('hidden');
+                }
+
+                chunks = [];
+                // Re-calcul pour assurer une compatibilité maximale (WebM est le plus sûr en audio/vidéo mobile)
+                recorder = new MediaRecorder(stream, { mimeType: type === 'video' ? 'video/webm' : 'audio/webm' });
+                recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
+                recorder.onstop = async () => {
+                    const blob = new Blob(chunks, { type: type === 'video' ? 'video/webm' : 'audio/webm' });
+                    const file = new File([blob], `capture-${Date.now()}.webm`, { type: blob.type });
+                    stream.getTracks().forEach(t => t.stop());
+                    await performMasterUpload(file, type);
+                };
+
+                document.getElementById('capture-icon').setAttribute('data-lucide', type === 'audio' ? 'mic' : 'video');
+                document.getElementById('capture-title').innerText = type === 'audio' ? 'CAPTATION AUDIO' : 'CAPTATION VIDÉO';
+                lucide.createIcons();
+
+                let sec = 0;
+                document.getElementById('capture-timer').innerText = "00:00";
+                if(recInt) clearInterval(recInt);
+                recInt = setInterval(() => {
+                    sec++;
+                    const m = Math.floor(sec/60).toString().padStart(2,'0');
+                    const s = (sec%60).toString().padStart(2,'0');
+                    document.getElementById('capture-timer').innerText = `${m}:${s}`;
+                }, 1000);
+
+                document.getElementById('capture-ui').classList.remove('hidden');
+                recorder.start(1000);
+            } catch (err) {
+                alert("Erreur accès média : " + err.message);
+            }
+        }
+
+        function stopCapture() {
+            if (recorder && recorder.state !== 'inactive') {
+                recorder.stop();
+                clearInterval(recInt);
+                document.getElementById('capture-ui').classList.add('hidden');
+            }
+        }
+
+        // TEXTE FIRESTORE
+        async function saveTextArchive() {
+            const title = document.getElementById('note-title').value.trim();
+            const content = document.getElementById('note-content').value.trim();
+            if (!title) return alert("Le titre est requis.");
+
+            const btn = document.getElementById('save-btn');
+            btn.disabled = true; btn.innerText = "Synchronisation...";
+
+            try {
+                await db.collection('notes').add({
+                    title, content, fileUrl: null, fileType: 'text',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                document.getElementById('note-title').value = '';
+                document.getElementById('note-content').value = '';
+            } catch (err) {
+                alert("Firestore Error: " + err.message);
+            } finally {
+                btn.disabled = false; btn.innerText = "Archiver 
