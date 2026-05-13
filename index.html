@@ -1,203 +1,498 @@
-<!DOCTYPE html><html lang="fr">
+<!DOCTYPE html>
+<html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>An ka Doni Mara So</title>  <script src="https://cdn.tailwindcss.com"></script>  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
-<body class="bg-slate-950 text-white min-h-screen p-4">  <div class="max-w-xl mx-auto space-y-6">
-    <h1 class="text-3xl font-black text-center">An ka Doni Mara So</h1><div class="bg-slate-900 p-4 rounded-xl space-y-4">
-  <input id="title" class="w-full p-3 rounded bg-slate-800" placeholder="Titre" />
-  <textarea id="content" class="w-full p-3 rounded bg-slate-800" placeholder="Description"></textarea>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>An ka Doni Mara So</title>
 
-  <button onclick="saveText()" class="bg-blue-600 px-4 py-3 rounded w-full font-bold">
-    Sauvegarder texte
-  </button>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body{
+    background:#020617;
+    color:white;
+    font-family:Arial,sans-serif;
+}
+
+.card{
+    background:#0f172a;
+    border-radius:20px;
+    padding:20px;
+}
+
+.input{
+    width:100%;
+    background:#1e293b;
+    border:none;
+    outline:none;
+    padding:14px;
+    border-radius:14px;
+    color:white;
+}
+
+.btn{
+    width:100%;
+    padding:14px;
+    border-radius:14px;
+    font-weight:bold;
+}
+
+.progress-bg{
+    width:100%;
+    height:14px;
+    background:#1e293b;
+    border-radius:999px;
+    overflow:hidden;
+}
+
+.progress-bar{
+    width:0%;
+    height:100%;
+    background:#22c55e;
+    transition:0.3s;
+}
+
+img,video{
+    width:100%;
+    border-radius:16px;
+}
+
+audio{
+    width:100%;
+}
+
+.status-ok{
+    color:#22c55e;
+}
+
+.status-error{
+    color:#ef4444;
+}
+</style>
+</head>
+
+<body class="p-4">
+
+<div class="max-w-xl mx-auto space-y-6">
+
+<h1 class="text-4xl font-black text-center">
+An ka Doni Mara So
+</h1>
+
+<div id="diagnostic" class="card text-sm">
+Connexion...
 </div>
 
-<div class="bg-slate-900 p-4 rounded-xl space-y-4">
-  <input type="file" id="fileInput" accept="image/*,audio/*,video/*" class="w-full" />
+<!-- TEXTE -->
+<div class="card space-y-4">
 
-  <button onclick="uploadFile()" class="bg-green-600 px-4 py-3 rounded w-full font-bold">
-    Envoyer fichier
-  </button>
+<input
+id="title"
+class="input"
+placeholder="Titre"
+/>
 
-  <div class="w-full bg-slate-800 rounded h-4 overflow-hidden">
-    <div id="progress" class="bg-green-500 h-full w-0"></div>
-  </div>
+<textarea
+id="content"
+class="input"
+placeholder="Description"
+rows="4"
+></textarea>
 
-  <p id="status" class="text-sm"></p>
+<button
+onclick="saveText()"
+class="btn bg-blue-600"
+>
+Sauvegarder texte
+</button>
+
 </div>
 
+<!-- FICHIER -->
+<div class="card space-y-4">
+
+<input
+type="file"
+id="fileInput"
+accept="image/*,audio/*,video/*"
+/>
+
+<button
+onclick="uploadFile()"
+class="btn bg-green-600"
+>
+Envoyer fichier
+</button>
+
+<div class="progress-bg">
+<div id="progress" class="progress-bar"></div>
+</div>
+
+<p id="status"></p>
+
+</div>
+
+<!-- NOTES -->
 <div id="notes" class="space-y-4"></div>
 
-  </div><script>
+</div>
+
+<script>
+
+/* =========================
+   FIREBASE
+========================= */
+
 const firebaseConfig = {
-  apiKey: "AIzaSyDgXiAiZXQ9oVDhsXrxgB7mDXVA8yTpYJ4",
-  authDomain: "iron-be1a0.firebaseapp.com",
-  projectId: "iron-be1a0",
-  storageBucket: "iron-be1a0.appspot.com",
-  messagingSenderId: "470790299848",
-  appId: "1:470790299848:web:25f13d00162ef126f085fd"
+    apiKey: "AIzaSyDgXiAiZXQ9oVDhsXrxgB7mDXVA8yTpYJ4",
+    authDomain: "iron-be1a0.firebaseapp.com",
+    projectId: "iron-be1a0",
+    storageBucket: "iron-be1a0.appspot.com",
+    messagingSenderId: "470790299848",
+    appId: "1:470790299848:web:25f13d00162ef126f085fd"
 };
 
 firebase.initializeApp(firebaseConfig);
+
 const db = firebase.firestore();
 
-const SUPABASE_URL = "https://ajobmetgfnjphlginsxc.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqb2JtZXRnZm5qcGhsZ2luc3hjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTczMzcsImV4cCI6MjA5Mzg5MzMzN30.wtqJsBUCkW8CnZ1eu3vZMweo1v7nxle3fVpkmcDkgcA";
+/* =========================
+   SUPABASE
+========================= */
 
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL =
+"https://ajobmetgfnjphlginsxc.supabase.co";
 
-const BUCKET = "mara-so";
+const SUPABASE_KEY =
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqb2JtZXRnZm5qcGhsZ2luc3hjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTczMzcsImV4cCI6MjA5Mzg5MzMzN30.wtqJsBUCkW8CnZ1eu3vZMweo1v7nxle3fVpkmcDkgcA";
 
-console.log("Supabase prêt");
+const supabaseClient = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
 
-async function saveText() {
-  const title = document.getElementById('title').value.trim();
-  const content = document.getElementById('content').value.trim();
+const BUCKET = "mara-donc";
 
-  if (!title) {
-    alert('Titre requis');
-    return;
-  }
+/* =========================
+   DIAGNOSTIC
+========================= */
 
-  try {
-    await db.collection('notes').add({
-      title,
-      content,
-      type: 'text',
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+async function testConnection(){
 
-    document.getElementById('title').value = '';
-    document.getElementById('content').value = '';
+    const box = document.getElementById("diagnostic");
 
-    alert('Texte sauvegardé');
-  } catch (err) {
-    console.error(err);
-    alert(err.message);
-  }
-}
+    try{
 
-async function uploadFile() {
-  const fileInput = document.getElementById('fileInput');
-  const file = fileInput.files[0];
+        box.innerHTML = "Test connexion Supabase...";
 
-  if (!file) {
-    alert('Choisis un fichier');
-    return;
-  }
+        const testFile =
+            new Blob(["test"], { type:"text/plain" });
 
-  console.log('Fichier détecté:', file);
+        const testName =
+            "test-" + Date.now() + ".txt";
 
-  const status = document.getElementById('status');
-  const progress = document.getElementById('progress');
+        const { error } =
+            await supabaseClient.storage
+            .from(BUCKET)
+            .upload(testName, testFile);
 
-  status.innerText = 'Upload en cours...';
-  progress.style.width = '10%';
+        if(error){
 
-  try {
-    const extension = file.name.split('.').pop();
-    const fileName = Date.now() + '-' + Math.random().toString(36).substring(2) + '.' + extension;
+            console.error(error);
 
-    console.log('Upload vers bucket:', BUCKET);
+            box.innerHTML =
+            `
+            <div class="status-error">
+            ❌ ERREUR SUPABASE<br><br>
+            ${error.message}
+            </div>
+            `;
 
-    const { data, error } = await supabaseClient.storage
-      .from(BUCKET)
-      .upload(fileName, file);
-
-    if (error) {
-      console.error('Erreur upload:', error);
-      alert(error.message);
-      status.innerText = 'Erreur upload';
-      progress.style.width = '0%';
-      return;
-    }
-
-    progress.style.width = '70%';
-
-    const { data: publicData } = supabaseClient.storage
-      .from(BUCKET)
-      .getPublicUrl(fileName);
-
-    const publicUrl = publicData.publicUrl;
-
-    console.log('URL:', publicUrl);
-
-    progress.style.width = '90%';
-
-    let fileType = 'file';
-
-    if (file.type.startsWith('image/')) {
-      fileType = 'image';
-    } else if (file.type.startsWith('audio/')) {
-      fileType = 'audio';
-    } else if (file.type.startsWith('video/')) {
-      fileType = 'video';
-    }
-
-    await db.collection('notes').add({
-      title: file.name,
-      content: '',
-      fileUrl: publicUrl,
-      type: fileType,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    progress.style.width = '100%';
-    status.innerText = 'Upload réussi';
-
-    fileInput.value = '';
-
-    alert('Fichier sauvegardé dans Supabase');
-
-  } catch (err) {
-    console.error(err);
-    alert(err.message);
-    status.innerText = 'Erreur critique';
-    progress.style.width = '0%';
-  }
-}
-
-function loadNotes() {
-  db.collection('notes')
-    .orderBy('createdAt', 'desc')
-    .onSnapshot((snapshot) => {
-      const notesDiv = document.getElementById('notes');
-      notesDiv.innerHTML = '';
-
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-
-        const card = document.createElement('div');
-        card.className = 'bg-slate-900 p-4 rounded-xl space-y-3';
-
-        let media = '';
-
-        if (data.fileUrl) {
-          if (data.type === 'image') {
-            media = `<img src="${data.fileUrl}" class="rounded-xl w-full">`;
-          }
-
-          if (data.type === 'audio') {
-            media = `<audio controls class="w-full"><source src="${data.fileUrl}"></audio>`;
-          }
-
-          if (data.type === 'video') {
-            media = `<video controls class="rounded-xl w-full"><source src="${data.fileUrl}"></video>`;
-          }
+            return;
         }
 
-        card.innerHTML = `
-          <h2 class="font-bold text-xl">${data.title || 'Sans titre'}</h2>
-          <p>${data.content || ''}</p>
-          ${media}
+        box.innerHTML =
+        `
+        <div class="status-ok">
+        ✅ Supabase connecté<br>
+        ✅ Bucket détecté<br>
+        ✅ Upload autorisé
+        </div>
         `;
 
-        notesDiv.appendChild(card);
-      });
+    }catch(err){
+
+        console.error(err);
+
+        box.innerHTML =
+        `
+        <div class="status-error">
+        ❌ ${err.message}
+        </div>
+        `;
+    }
+}
+
+/* =========================
+   TEXTE
+========================= */
+
+async function saveText(){
+
+    const title =
+        document.getElementById("title")
+        .value
+        .trim();
+
+    const content =
+        document.getElementById("content")
+        .value
+        .trim();
+
+    if(!title){
+        alert("Titre requis");
+        return;
+    }
+
+    try{
+
+        await db.collection("notes").add({
+            title:title,
+            content:content,
+            type:"text",
+            createdAt:
+                firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        document.getElementById("title").value = "";
+        document.getElementById("content").value = "";
+
+        alert("Texte sauvegardé");
+
+    }catch(err){
+
+        console.error(err);
+        alert(err.message);
+    }
+}
+
+/* =========================
+   UPLOAD
+========================= */
+
+async function uploadFile(){
+
+    const input =
+        document.getElementById("fileInput");
+
+    const file = input.files[0];
+
+    if(!file){
+        alert("Choisis un fichier");
+        return;
+    }
+
+    const progress =
+        document.getElementById("progress");
+
+    const status =
+        document.getElementById("status");
+
+    progress.style.width = "10%";
+
+    status.innerText = "Préparation...";
+
+    try{
+
+        const extension =
+            file.name.split(".").pop();
+
+        const fileName =
+            Date.now() +
+            "-" +
+            Math.random().toString(36).substring(2)
+            +
+            "." +
+            extension;
+
+        status.innerText = "Upload Supabase...";
+
+        const { data, error } =
+            await supabaseClient.storage
+            .from(BUCKET)
+            .upload(fileName, file, {
+                cacheControl:"3600",
+                upsert:false
+            });
+
+        if(error){
+
+            console.error(error);
+
+            alert(error.message);
+
+            status.innerText =
+                "Erreur upload";
+
+            progress.style.width = "0%";
+
+            return;
+        }
+
+        progress.style.width = "70%";
+
+        const { data:publicData } =
+            supabaseClient.storage
+            .from(BUCKET)
+            .getPublicUrl(fileName);
+
+        const publicUrl =
+            publicData.publicUrl;
+
+        let type = "file";
+
+        if(file.type.startsWith("image/")){
+            type = "image";
+        }
+
+        if(file.type.startsWith("audio/")){
+            type = "audio";
+        }
+
+        if(file.type.startsWith("video/")){
+            type = "video";
+        }
+
+        status.innerText =
+            "Sauvegarde Firestore...";
+
+        await db.collection("notes").add({
+
+            title:file.name,
+
+            content:"",
+
+            fileUrl:publicUrl,
+
+            type:type,
+
+            createdAt:
+                firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        progress.style.width = "100%";
+
+        status.innerText =
+            "Upload réussi";
+
+        input.value = "";
+
+        alert("Fichier sauvegardé");
+
+    }catch(err){
+
+        console.error(err);
+
+        alert(err.message);
+
+        status.innerText =
+            "Erreur critique";
+
+        progress.style.width = "0%";
+    }
+}
+
+/* =========================
+   CHARGEMENT NOTES
+========================= */
+
+function loadNotes(){
+
+    db.collection("notes")
+    .orderBy("createdAt","desc")
+    .onSnapshot((snapshot)=>{
+
+        const notes =
+            document.getElementById("notes");
+
+        notes.innerHTML = "";
+
+        snapshot.forEach((doc)=>{
+
+            const data = doc.data();
+
+            const card =
+                document.createElement("div");
+
+            card.className =
+                "card space-y-4";
+
+            let media = "";
+
+            if(data.fileUrl){
+
+                if(data.type === "image"){
+
+                    media =
+                    `
+                    <img src="${data.fileUrl}">
+                    `;
+                }
+
+                if(data.type === "audio"){
+
+                    media =
+                    `
+                    <audio controls>
+                    <source src="${data.fileUrl}">
+                    </audio>
+                    `;
+                }
+
+                if(data.type === "video"){
+
+                    media =
+                    `
+                    <video controls>
+                    <source src="${data.fileUrl}">
+                    </video>
+                    `;
+                }
+            }
+
+            card.innerHTML =
+            `
+            <h2 class="text-2xl font-bold">
+            ${data.title || "Sans titre"}
+            </h2>
+
+            <p>
+            ${data.content || ""}
+            </p>
+
+            ${media}
+            `;
+
+            notes.appendChild(card);
+        });
+
     });
 }
 
+/* =========================
+   START
+========================= */
+
+testConnection();
+
 loadNotes();
-</script></body>
+
+</script>
+
+</body>
 </html>
