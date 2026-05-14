@@ -62,6 +62,7 @@
       Envoyer fichier
     </button>
 
+    <!-- BARRE -->
     <div class="w-full bg-slate-800 rounded h-4 overflow-hidden">
       <div
         id="progress"
@@ -80,10 +81,6 @@
 
 <script>
 
-//////////////////////////////////////////////////////
-// FIREBASE
-//////////////////////////////////////////////////////
-
 const firebaseConfig = {
   apiKey: "AIzaSyDgXiAiZXQ9oVDhsXrxgB7mDXVA8yTpYJ4",
   authDomain: "iron-be1a0.firebaseapp.com",
@@ -97,37 +94,26 @@ firebase.initializeApp(firebaseConfig);
 
 const db = firebase.firestore();
 
-//////////////////////////////////////////////////////
-// SUPABASE
-//////////////////////////////////////////////////////
-
 const SUPABASE_URL =
-  "https://ajobmetgfnjphlginsxc.supabase.co";
+"https://ajobmetgfnjphlginsxc.supabase.co";
 
 const SUPABASE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqb2JtZXRnZm5qcGhsZ2luc3hjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTczMzcsImV4cCI6MjA5Mzg5MzMzN30.wtqJsBUCkW8CnZ1eu3vZMweo1v7nxle3fVpkmcDkgcA";
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqb2JtZXRnZm5qcGhsZ2luc3hjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTczMzcsImV4cCI6MjA5Mzg5MzMzN30.wtqJsBUCkW8CnZ1eu3vZMweo1v7nxle3fVpkmcDkgcA";
 
-const supabaseClient = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+const supabaseClient =
+supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// IMPORTANT : NOM EXACT DU BUCKET
-const BUCKET = "mara-donc";
+const BUCKET = "mara";
 
-console.log("Supabase connecté");
-
-//////////////////////////////////////////////////////
-// SAUVEGARDE TEXTE
-//////////////////////////////////////////////////////
+console.log("SUPABASE CONNECTÉ");
 
 async function saveText() {
 
   const title =
-    document.getElementById('title').value.trim();
+  document.getElementById("title").value.trim();
 
   const content =
-    document.getElementById('content').value.trim();
+  document.getElementById("content").value.trim();
 
   if (!title) {
     alert("Titre requis");
@@ -136,16 +122,16 @@ async function saveText() {
 
   try {
 
-    await db.collection('notes').add({
-      title: title,
-      content: content,
+    await db.collection("notes").add({
+      title,
+      content,
       type: "text",
       createdAt:
-        firebase.firestore.FieldValue.serverTimestamp()
+      firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    document.getElementById('title').value = "";
-    document.getElementById('content').value = "";
+    document.getElementById("title").value = "";
+    document.getElementById("content").value = "";
 
     alert("Texte sauvegardé");
 
@@ -158,16 +144,12 @@ async function saveText() {
 
 }
 
-//////////////////////////////////////////////////////
-// UPLOAD FICHIER
-//////////////////////////////////////////////////////
-
 async function uploadFile() {
 
-  const input =
-    document.getElementById("fileInput");
+  const fileInput =
+  document.getElementById("fileInput");
 
-  const file = input.files[0];
+  const file = fileInput.files[0];
 
   if (!file) {
     alert("Choisis un fichier");
@@ -175,63 +157,56 @@ async function uploadFile() {
   }
 
   const status =
-    document.getElementById("status");
+  document.getElementById("status");
 
   const progress =
-    document.getElementById("progress");
+  document.getElementById("progress");
 
   try {
 
     status.innerText = "Upload...";
-    progress.style.width = "20%";
+    progress.style.width = "10%";
 
     const extension =
-      file.name.split('.').pop();
+    file.name.split(".").pop();
 
     const fileName =
-      Date.now() +
-      "-" +
-      Math.random().toString(36).substring(2) +
-      "." +
-      extension;
+    Date.now() + "-" +
+    Math.random().toString(36).substring(2)
+    + "." + extension;
 
-    //////////////////////////////////////////////////////
-    // UPLOAD SUPABASE
-    //////////////////////////////////////////////////////
+    console.log("UPLOAD VERS :", BUCKET);
+
+    progress.style.width = "30%";
 
     const { data, error } =
-      await supabaseClient.storage
-        .from(BUCKET)
-        .upload(fileName, file);
+    await supabaseClient.storage
+      .from(BUCKET)
+      .upload(fileName, file);
 
     if (error) {
-      console.error(error);
-      alert("❌ ERREUR SUPABASE : " + error.message);
 
-      status.innerText = "Erreur upload";
+      console.error(error);
+
+      alert("❌ ERREUR SUPABASE\n\n" + error.message);
+
+      status.innerText =
+      "Erreur upload";
+
       progress.style.width = "0%";
+
       return;
     }
 
     progress.style.width = "70%";
 
-    //////////////////////////////////////////////////////
-    // URL PUBLIQUE
-    //////////////////////////////////////////////////////
-
     const { data: publicData } =
-      supabaseClient.storage
-        .from(BUCKET)
-        .getPublicUrl(fileName);
+    supabaseClient.storage
+      .from(BUCKET)
+      .getPublicUrl(fileName);
 
     const publicUrl =
-      publicData.publicUrl;
-
-    progress.style.width = "90%";
-
-    //////////////////////////////////////////////////////
-    // TYPE
-    //////////////////////////////////////////////////////
+    publicData.publicUrl;
 
     let fileType = "file";
 
@@ -247,26 +222,23 @@ async function uploadFile() {
       fileType = "video";
     }
 
-    //////////////////////////////////////////////////////
-    // FIRESTORE
-    //////////////////////////////////////////////////////
-
     await db.collection("notes").add({
       title: file.name,
       content: "",
       fileUrl: publicUrl,
       type: fileType,
       createdAt:
-        firebase.firestore.FieldValue.serverTimestamp()
+      firebase.firestore.FieldValue.serverTimestamp()
     });
 
     progress.style.width = "100%";
 
-    status.innerText = "Upload réussi";
+    status.innerText =
+    "Upload réussi";
 
-    input.value = "";
+    fileInput.value = "";
 
-    alert("✅ Fichier sauvegardé");
+    alert("✅ Sauvegarde réussie");
 
   }
 
@@ -274,19 +246,16 @@ async function uploadFile() {
 
     console.error(err);
 
-    alert(err.message);
+    alert("❌ ERREUR\n\n" + err.message);
 
-    status.innerText = "Erreur critique";
+    status.innerText =
+    "Erreur critique";
 
     progress.style.width = "0%";
 
   }
 
 }
-
-//////////////////////////////////////////////////////
-// CHARGEMENT NOTES
-//////////////////////////////////////////////////////
 
 function loadNotes() {
 
@@ -295,7 +264,7 @@ function loadNotes() {
     .onSnapshot((snapshot) => {
 
       const notesDiv =
-        document.getElementById("notes");
+      document.getElementById("notes");
 
       notesDiv.innerHTML = "";
 
@@ -304,59 +273,43 @@ function loadNotes() {
         const data = doc.data();
 
         const card =
-          document.createElement("div");
+        document.createElement("div");
 
         card.className =
-          "bg-slate-900 p-4 rounded-xl space-y-3";
+        "bg-slate-900 p-4 rounded-xl space-y-3";
 
         let media = "";
 
-        //////////////////////////////////////////////////////
-        // IMAGE
-        //////////////////////////////////////////////////////
+        if (data.fileUrl) {
 
-        if (data.type === "image") {
+          if (data.type === "image") {
 
-          media = `
-            <img
-              src="${data.fileUrl}"
-              class="rounded-xl w-full"
-            >
-          `;
+            media =
+            `<img src="${data.fileUrl}"
+            class="rounded-xl w-full">`;
 
-        }
+          }
 
-        //////////////////////////////////////////////////////
-        // AUDIO
-        //////////////////////////////////////////////////////
+          if (data.type === "audio") {
 
-        else if (data.type === "audio") {
-
-          media = `
-            <audio controls class="w-full">
+            media =
+            `<audio controls class="w-full">
               <source src="${data.fileUrl}">
-            </audio>
-          `;
+            </audio>`;
 
-        }
+          }
 
-        //////////////////////////////////////////////////////
-        // VIDEO
-        //////////////////////////////////////////////////////
+          if (data.type === "video") {
 
-        else if (data.type === "video") {
-
-          media = `
-            <video controls class="rounded-xl w-full">
+            media =
+            `<video controls
+             class="rounded-xl w-full">
               <source src="${data.fileUrl}">
-            </video>
-          `;
+            </video>`;
+
+          }
 
         }
-
-        //////////////////////////////////////////////////////
-        // AFFICHAGE
-        //////////////////////////////////////////////////////
 
         card.innerHTML = `
           <h2 class="font-bold text-xl">
@@ -377,10 +330,6 @@ function loadNotes() {
     });
 
 }
-
-//////////////////////////////////////////////////////
-// DEMARRAGE
-//////////////////////////////////////////////////////
 
 loadNotes();
 
