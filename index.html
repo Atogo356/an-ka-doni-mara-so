@@ -3,95 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Doni Mara So</title>
+    <title>Doni Mara So - Cloud</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --bg: #ffffff; --text: #1c1c1e; --primary: #007aff; --surface: #f2f2f7; }
-        @media (prefers-color-scheme: dark) { :root { --bg: #1c1c1e; --text: #f2f2f7; --surface: #2c2c2e; } }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; }
-        .container { padding: 20px; }
-        .note-card { background: var(--surface); padding: 15px; border-radius: 10px; margin-bottom: 10px; cursor: pointer; border: 1px solid #d1d1d6; }
-        .hidden { display: none; }
-        .editor { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 10; padding: 20px; display: flex; flex-direction: column; }
-        input, textarea { width: 100%; border: none; outline: none; background: transparent; color: var(--text); }
-        input { font-size: 24px; font-weight: bold; margin-bottom: 15px; }
-        textarea { flex: 1; font-size: 18px; resize: none; }
-        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; border-radius: 30px; background: var(--primary); color: white; border: none; font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        :root { --bg: #ffffff; --text: #1c1c1e; --primary: #007aff; --surface: #f2f2f7; --border: #d1d1d6; }
+        @media (prefers-color-scheme: dark) { :root { --bg: #1c1c1e; --text: #f2f2f7; --primary: #0a84ff; --surface: #2c2c2e; --border: #38383a; } }
+        * { box-sizing: border-box; font-family: -apple-system, sans-serif; }
+        body { background: var(--bg); color: var(--text); margin: 0; padding-bottom: 90px; }
+        .hidden { display: none !important; }
+        
+        /* Liste */
+        header { padding: 20px; background: var(--surface); border-bottom: 1px solid var(--border); font-weight: 800; font-size: 22px; display: flex; justify-content: space-between; align-items: center; }
+        .notes-container { padding: 15px; }
+        .note-card { background: var(--surface); padding: 18px; border-radius: 15px; margin-bottom: 12px; border: 1px solid var(--border); cursor: pointer; transition: transform 0.1s; }
+        .note-card:active { transform: scale(0.98); }
+        .note-card h3 { margin: 0 0 5px 0; font-size: 18px; }
+        .note-card p { margin: 0; opacity: 0.6; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Éditeur */
+        .editor-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 100; display: flex; flex-direction: column; }
+        .editor-header { padding: 15px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .editor-content { flex: 1; padding: 20px; display: flex; flex-direction: column; }
+        .editor-content input { font-size: 26px; font-weight: bold; border: none; outline: none; background: transparent; color: var(--text); margin-bottom: 15px; width: 100%; }
+        .editor-content textarea { flex: 1; font-size: 18px; border: none; outline: none; background: transparent; color: var(--text); resize: none; line-height: 1.6; width: 100%; }
+
+        /* Boutons */
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; border-radius: 35px; background: var(--primary); color: white; font-size: 35px; border: none; box-shadow: 0 8px 20px rgba(0,0,0,0.3); z-index: 50; }
+        .btn { padding: 8px 16px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
+        .btn-back { background: var(--surface); color: var(--primary); border: 1px solid var(--primary); }
+        .status { font-size: 12px; font-weight: normal; color: var(--primary); }
     </style>
 </head>
 <body>
-    <div id="app-ui" class="container">
-        <h1 style="color:var(--primary)">Mara Cloud</h1>
-        <div id="list">Chargement des notes...</div>
+
+    <header>
+        Doni Mara So
+        <button onclick="loadNotes()" style="background:none; border:none; font-size:20px;">🔄</button>
+    </header>
+
+    <div id="notes-list" class="notes-container">
+        <p style="text-align:center; opacity:0.5;">Chargement de vos notes...</p>
     </div>
-    <button class="fab" onclick="addNote()">+</button>
-    <div id="editor-ui" class="editor hidden">
-        <div style="display:flex; justify-content: space-between; margin-bottom: 20px;">
-            <button onclick="closeEditor()" style="color:var(--primary); background:none; border:none; font-weight:bold;">← Retour</button>
-            <span id="status" style="font-size:12px; opacity:0.5;">Prêt</span>
-            <button onclick="deleteNote()" style="color:red; background:none; border:none;">Supprimer</button>
+
+    <button class="fab" onclick="createNewNote()">+</button>
+
+    <div id="editor-ui" class="editor-overlay hidden">
+        <div class="editor-header">
+            <button class="btn btn-back" onclick="closeEditor()">Fermer</button>
+            <span id="save-status" class="status">Synchronisé</span>
+            <button onclick="deleteNote()" style="background: #ff3b30; color: white;" class="btn">Suppr.</button>
         </div>
-        <input type="text" id="title" placeholder="Titre..." oninput="autoSave()">
-        <textarea id="content" placeholder="Écrivez ici..." oninput="autoSave()"></textarea>
+        <div class="editor-content">
+            <input type="text" id="title-input" placeholder="Titre..." oninput="triggerAutoSave()">
+            <textarea id="content-input" placeholder="Note..." oninput="triggerAutoSave()"></textarea>
+        </div>
     </div>
 
     <script>
-        const CONF = {
-            url: 'https://xiwdnqypjqmtruvfiolu.supabase.co',
-            key: 'EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpd2RucXlwanFtdHJ1dmZpb2x1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzI5OTksImV4cCI6MjA5NDM0ODk5OX0.ioKD_XvXmZU4V-etRW5pWskEOh1WZy9A_NFY1QOTA8Y'
-        };
-        const sb = supabase.createClient(CONF.url, CONF.key);
-        let activeId = null;
-        let timer = null;
+        // CONFIGURATION SUPABASE PROJET "MARA"
+        const SB_URL = 'https://xiwdnqypjqmtruvfiolu.supabase.co';
+        const SB_KEY = 'EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhpd2RucXlwanFtdHJ1dmZpb2x1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzI5OTksImV4cCI6MjA5NDM0ODk5OX0.ioKD_XvXmZU4V-etRW5pWskEOh1WZy9A_NFY1QOTA8Y';
+        
+        const sb = supabase.createClient(SB_URL, SB_KEY);
+        let activeNoteId = null;
+        let saveTimer = null;
 
-        async function load() {
-            const { data, error } = await sb.from('notes').select('*').order('created_at', {ascending: false});
-            if (error) { document.getElementById('list').innerText = "Erreur de connexion."; return; }
-            document.getElementById('list').innerHTML = data?.map(n => `
-                <div class="note-card" onclick='openNote(${JSON.stringify(n)})'>
-                    <strong>${n.title || 'Sans titre'}</strong>
-                    <p style="margin:5px 0 0 0; font-size:14px; opacity:0.7;">${n.content?.substring(0,50) || ''}...</p>
-                </div>
-            `).join('') || 'Aucune note.';
+        // CHARGEMENT AUTOMATIQUE AU DÉMARRAGE
+        document.addEventListener('DOMContentLoaded', loadNotes);
+
+        async function loadNotes() {
+            const listDiv = document.getElementById('notes-list');
+            const { data, error } = await sb.from('notes').select('*').order('created_at', { ascending: false });
+            
+            if (error) {
+                listDiv.innerHTML = `<p style="color:red">Erreur : ${error.message}</p>`;
+                return;
+            }
+            
+            listDiv.innerHTML = data.length ? '' : '<p style="text-align:center; opacity:0.5">Aucune note sur le Cloud.</p>';
+            
+            data.forEach(note => {
+                const card = document.createElement('div');
+                card.className = 'note-card';
+                card.innerHTML = `<h3>${note.title || 'Sans titre'}</h3><p>${note.content || '...'}</p>`;
+                card.onclick = () => openEditor(note);
+                listDiv.appendChild(card);
+            });
         }
 
-        async function addNote() {
+        async function createNewNote() {
             const { data, error } = await sb.from('notes').insert([{ title: '', content: '' }]).select();
-            if (data) openNote(data[0]);
-            else console.error(error);
+            if (data) openEditor(data[0]);
         }
 
-        function openNote(n) {
-            activeId = n.id;
-            document.getElementById('title').value = n.title || '';
-            document.getElementById('content').value = n.content || '';
+        function openEditor(note) {
+            activeNoteId = note.id;
+            document.getElementById('title-input').value = note.title || '';
+            document.getElementById('content-input').value = note.content || '';
             document.getElementById('editor-ui').classList.remove('hidden');
+            document.getElementById('save-status').innerText = "Cloud OK";
         }
 
         function closeEditor() {
             document.getElementById('editor-ui').classList.add('hidden');
-            load();
+            loadNotes();
         }
 
-        function autoSave() {
-            document.getElementById('status').innerText = "Enregistrement...";
-            clearTimeout(timer);
-            timer = setTimeout(async () => {
-                await sb.from('notes').update({ 
-                    title: document.getElementById('title').value, 
-                    content: document.getElementById('content').value 
-                }).eq('id', activeId);
-                document.getElementById('status').innerText = "Enregistré";
-            }, 1000);
+        function triggerAutoSave() {
+            document.getElementById('save-status').innerText = "Sync...";
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(saveToCloud, 1000);
+        }
+
+        async function saveToCloud() {
+            if (!activeNoteId) return;
+            const t = document.getElementById('title-input').value;
+            const c = document.getElementById('content-input').value;
+            
+            await sb.from('notes').update({ title: t, content: c }).eq('id', activeNoteId);
+            document.getElementById('save-status').innerText = "Enregistré";
         }
 
         async function deleteNote() {
-            if (confirm("Supprimer cette note ?")) {
-                await sb.from('notes').delete().eq('id', activeId);
+            if (confirm("Supprimer du Cloud ?")) {
+                await sb.from('notes').delete().eq('id', activeNoteId);
                 closeEditor();
             }
         }
-        load();
     </script>
 </body>
 </html>
